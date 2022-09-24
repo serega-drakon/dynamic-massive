@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define newdArray(name) struct dynamicArray name = {0,0,0};
+#define newdArray(name) struct dynamicArray name = {0,0,0,1};
 
 struct dynamicArray {
     int *array;
     int n; //обязательно обращаем в нуль!
     _Bool memErr;
+    _Bool isFree;
 };
 
 //пользовательские ф.
@@ -16,14 +17,14 @@ void arraySwitch(struct dynamicArray *structOfdArray);
 
 int main() {
     int x = 0;
-    struct dynamicArray test = {0, -1,0};
+    struct dynamicArray test = {0, -1,0,1};
     arraySwitch(&test);
     dArray_w(x,123);
     printf("n = %d\n", test.n);
     printf("arr[%d] = %d\n", x, dArray_r(x));
     printf("array[%d] = %d\n", x, test.array[x]);
 
-    struct dynamicArray second = {0,0,0};
+    struct dynamicArray second = {0,0,0,1};
     arraySwitch(&second);
     dArray_w(x,321);
     printf("second: arr[%d] = %d\n", x, dArray_r(x));
@@ -48,7 +49,7 @@ void arrayCheckout(int flag, struct dynamicArray *structOfdArray_W, struct dynam
 int arrayExtend(int x, int step, struct dynamicArray *structOfArray);
 
 int dArray(int flag, int x, int value) {
-    static struct dynamicArray *structOfdArray;
+    struct dynamicArray *structOfdArray;
     _Bool err = 0;
     arrayCheckout(READ, 0,&structOfdArray);
     if(structOfdArray->memErr)
@@ -88,18 +89,13 @@ int arrayExtend(int x, int step, struct dynamicArray *structOfArray){
 
 void arrayCheckout(int flag, struct dynamicArray *structOfdArray_W, struct dynamicArray **structOfdArray_R) { //обожаю дрочево со ссылками оаоаоа
     static struct dynamicArray *branch;//а хули пусть будет как гит
-    static _Bool hasChanged = 0;
 
     switch (flag) {
         case READ:
-            if (hasChanged) {
                 *structOfdArray_R = branch;
-                hasChanged = 0;
-            }
             break;
         case WRITE:
             branch = structOfdArray_W;
-            hasChanged = 1;
             break;
     }
 }
@@ -125,3 +121,6 @@ int dArray_w(int x, int value){
         return 0;
     }
 }
+
+void dArray_free(){}
+int arrayMemErr(){}
