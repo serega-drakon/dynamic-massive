@@ -1,27 +1,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define newdArray(name) struct dynamicArray name = {0,0};
+#define newdArray(name) struct dynamicArray name = {0,0,0};
 
 struct dynamicArray {
     int *array;
     int n; //обязательно обращаем в нуль!
+    _Bool memErr;
 };
 
+//пользовательские ф.
 int dArray_w(int x, int value);
 int dArray_r(int x);
 void arraySwitch(struct dynamicArray *structOfdArray);
 
 int main() {
     int x = 0;
-    struct dynamicArray test = {0, -1};
+    struct dynamicArray test = {0, -1,0};
     arraySwitch(&test);
     dArray_w(x,123);
     printf("n = %d\n", test.n);
     printf("arr[%d] = %d\n", x, dArray_r(x));
     printf("array[%d] = %d\n", x, test.array[x]);
 
-    struct dynamicArray second = {0,0};
+    struct dynamicArray second = {0,0,0};
     arraySwitch(&second);
     dArray_w(x,321);
     printf("second: arr[%d] = %d\n", x, dArray_r(x));
@@ -37,9 +39,11 @@ int main() {
 
 #define READ 0
 #define WRITE 1
+//шаг на который будет расширяться массив
 #define STEP 10
 #define MEM_ERR 1
 
+//библиотечные ф.
 void arrayCheckout(int flag, struct dynamicArray *structOfdArray_W, struct dynamicArray **structOfdArray_R);
 int arrayExtend(int x, int step, struct dynamicArray *structOfArray);
 
@@ -47,9 +51,12 @@ int dArray(int flag, int x, int value) {
     static struct dynamicArray *structOfdArray;
     _Bool err = 0;
     arrayCheckout(READ, 0,&structOfdArray);
+    if(structOfdArray->memErr)
+        return 0;
     if(x >= structOfdArray->n){
         if(arrayExtend(x,STEP, structOfdArray) == MEM_ERR){
             printf("memory allocation error\n");
+            structOfdArray->memErr = 1;
             return 0;
         }
         err = 1;
@@ -102,9 +109,19 @@ void arraySwitch(struct dynamicArray *structOfdArray){
 }
 
 int dArray_r(int x){
-    return dArray(READ, x, 0);
+    if (x >= 0)
+        return dArray(READ, x, 0);
+    else{
+        printf("dArray error: x = %d < 0\n", x);
+        return 0;
+    }
 }
 
 int dArray_w(int x, int value){
-    return dArray(WRITE, x, value);
+    if(x >= 0)
+        return dArray(WRITE, x, value);
+    else{
+        printf("dArray error: x = %d < 0\n", x);
+        return 0;
+    }
 }
