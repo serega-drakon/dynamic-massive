@@ -1,63 +1,53 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define newdArray(name) struct dynamicArray name = {0,0,0,1};
-
-struct dynamicArray {
-    int *array;
-    int n; //обязательно обращаем в нуль!
-    _Bool memErr;
-    _Bool isFree;
-};
-
 //пользовательские ф.
-int dArray_w(int x, int value);
-int dArray_r(int x);
-void arraySwitch(struct dynamicArray *structOfdArray);
+struct dArray;
+int dArray_w(int x, int y, int value);
+int dArray_r(int x, int y);
+void arraySwitch(struct dArray *ptrdArray);
+void* arrayInit();
+void dArrayFree();
 
 int main() {
-    int x = 0;
-    struct dynamicArray test = {0, -1,0,1};
-    arraySwitch(&test);
-    dArray_w(x,123);
-    printf("n = %d\n", test.n);
-    printf("arr[%d] = %d\n", x, dArray_r(x));
-    printf("array[%d] = %d\n", x, test.array[x]);
+    int x = 10;
+    int y = 2;
+    struct dArray *array = arrayInit();
+    arraySwitch(array);
+    printf("|%d\n", dArray_w(1,1,100));
+    printf("%d\n", dArray_r(1,1));
 
-    struct dynamicArray second = {0,0,0,1};
-    arraySwitch(&second);
-    dArray_w(x,321);
-    printf("second: arr[%d] = %d\n", x, dArray_r(x));
 
-    arraySwitch(&test);
-    printf("first: arr[%d] = %d\n", x, dArray_r(x));
-
-    newdArray(cock);
-    arraySwitch(&cock);
-    printf("||%d\n", dArray_w(12,999));
     return 0;
 }
 
+/////////////////////////////////////библиотечные//////////////////////////////////////////
 #define READ 0
 #define WRITE 1
-//шаг на который будет расширяться массив
-#define STEP 10
+#define STEP 10  //шаг на который будет расширяться массив
 #define MEM_ERR 1
+#define MAX_X 300
 
-//библиотечные ф.
-void arrayCheckout(int flag, struct dynamicArray *structOfdArray_W, struct dynamicArray **structOfdArray_R);
-int arrayExtend(int x, int step, struct dynamicArray *structOfArray);
+struct dArray {
+    int *array;
+    int maxX;     //const value
+    int y;     //default = 0
+    _Bool memErr;//default = 0
+};
 
-int dArray(int flag, int x, int value) {
-    struct dynamicArray *structOfdArray;
+void arrayCheckout(int flag, struct dArray *dArray_W, struct dArray **dArray_R);
+int arrayExtend(int y, struct dArray *ptrdArray);
+
+int dArray_Main(int flag, int x, int y, int value) {
+    struct dArray *ptrdArray;
     _Bool err = 0;
-    arrayCheckout(READ, 0,&structOfdArray);
-    if(structOfdArray->memErr)
+    arrayCheckout(READ, 0,&ptrdArray);
+    if(ptrdArray->memErr)
         return 0;
-    if(x >= structOfdArray->n){
-        if(arrayExtend(x,STEP, structOfdArray) == MEM_ERR){
+    if(y >= ptrdArray->y){
+        if(arrayExtend(y, ptrdArray) == MEM_ERR){
             printf("memory allocation error\n");
-            structOfdArray->memErr = 1;
+            ptrdArray->memErr = 1;
             return 0;
         }
         err = 1;
@@ -66,61 +56,83 @@ int dArray(int flag, int x, int value) {
     switch (flag) {
         case READ:
             if (err)
-                printf("Значение X = %d получено из неопределенной переменной\n", x);
-            return structOfdArray->array[x];
+                printf("Значение X = %d, Y = %d получено из неопределенной переменной\n", x, y);
+            return ptrdArray->array[y * ptrdArray->maxX + x];
         case WRITE:
-            return (structOfdArray->array[x] = value);
+            return (ptrdArray->array[y * ptrdArray->maxX + x] = value);
     }
 }
 
-int arrayExtend(int x, int step, struct dynamicArray *structOfArray){
-    int *buff = structOfArray->array;
+int arrayExtend(int y, struct dArray *ptrdArray){
+    int *buff = ptrdArray->array;
     //переменная х теряет смысл, теперь это новое кол-во элементов массива
-    x = x + 1 + (step - (x + 1) % step);
-    structOfArray->array = malloc(x * sizeof(int));
-    if(structOfArray->array == NULL)
+    y = y + 1 + (STEP - (y + 1) % STEP);
+    ptrdArray->array = malloc(y * ptrdArray->maxX * sizeof(int));
+    if(ptrdArray->array == NULL)
         return MEM_ERR;
-    for(int i = 0; i < structOfArray->n; i++)
-        structOfArray->array[i] = buff[i];
-    structOfArray->n = x;
+    for(int i = 0; i < ptrdArray->y; i++)
+        ptrdArray->array[i] = buff[i];
+    ptrdArray->y = y;
     free(buff);
     return 0;
 }
 
-void arrayCheckout(int flag, struct dynamicArray *structOfdArray_W, struct dynamicArray **structOfdArray_R) { //обожаю дрочево со ссылками оаоаоа
-    static struct dynamicArray *branch;//а хули пусть будет как гит
+void arrayCheckout(int flag, struct dArray *dArray_W, struct dArray **dArray_R) { //обожаю дрочево со ссылками оаоаоа
+    static struct dArray *branch;//а хули пусть будет как гит
 
     switch (flag) {
         case READ:
-                *structOfdArray_R = branch;
+            *dArray_R = branch;
             break;
         case WRITE:
-            branch = structOfdArray_W;
+            branch = dArray_W;
             break;
     }
 }
 
-void arraySwitch(struct dynamicArray *structOfdArray){
-    arrayCheckout(WRITE, structOfdArray,0);
+/////////////////////////////////////пользовательские////////////////////////////////////////
+void* arrayInit(){ //сразу выделяет память под массив
+    struct dArray *ptrdArray = malloc(sizeof(struct dArray));
+    ptrdArray->maxX = MAX_X;
+    ptrdArray->y = 0;
+    ptrdArray->memErr = 0;
+    if(arrayExtend(ptrdArray->y,ptrdArray) == MEM_ERR){
+        printf("memory error\n");
+        ptrdArray->memErr = 1;
+    }
+    return ptrdArray;
 }
 
-int dArray_r(int x){
-    if (x >= 0)
-        return dArray(READ, x, 0);
+void dArrayFree(struct dArray *ptrdArray){
+    if(ptrdArray->memErr == 0)
+        free(ptrdArray->array);
+    free(ptrdArray);
+}
+
+_Bool arrayMemErr(){
+    struct dArray *ptrdArray;
+    arrayCheckout(READ, 0, &ptrdArray);
+    return ptrdArray->memErr;
+}
+
+void arraySwitch(struct dArray *ptrdArray){
+    arrayCheckout(WRITE, ptrdArray, 0);
+}
+
+int dArray_r(int x, int y){
+    if (x >= 0 && x < MAX_X && y >= 0)
+        return dArray_Main(READ, x, y, 0);
     else{
-        printf("dArray error: x = %d < 0\n", x);
+        printf("dArray_r error: X = %d or Y = %d < 0\n", x, y);
         return 0;
     }
 }
 
-int dArray_w(int x, int value){
-    if(x >= 0)
-        return dArray(WRITE, x, value);
+int dArray_w(int x, int y, int value){
+    if(x >= 0 && x < MAX_X && y >= 0)
+        return dArray_Main(WRITE, x, y, value);
     else{
-        printf("dArray error: x = %d < 0\n", x);
+        printf("dArray_w error: X = %d < 0 or Y = %d\n", x, y);
         return 0;
     }
 }
-
-void dArray_free(){}
-int arrayMemErr(){}
