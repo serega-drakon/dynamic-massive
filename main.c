@@ -14,9 +14,15 @@ int main() {
     int y = 2;
     struct dArray *array = arrayInit();
     arraySwitch(array);
-    printf("|%d\n", array_w(1, 1, 100));
-    printf("%d\n", array_r(1, 1));
-
+    int j = 0;
+    while(j < 100) {
+        for(int i = 0; i < 1; i++)
+            array_w(i, j, getchar());
+        for (int i = 0; i < 1; i++)
+            printf("%c", array_r(i, j));
+        j++;
+    }
+    arrayFree(array);
 
     return 0;
 }
@@ -24,7 +30,7 @@ int main() {
 /////////////////////////////////////библиотечные//////////////////////////////////////////
 #define READ 0
 #define WRITE 1
-#define STEP 10  //шаг на который будет расширяться массив
+#define STEP 1000  //шаг на который будет расширяться массив
 #define MEM_ERR 1
 #define MAX_X 300
 
@@ -70,8 +76,9 @@ int arrayExtend(int y, struct dArray *ptrArray){
     ptrArray->array = malloc(y * ptrArray->maxX * sizeof(int));
     if(ptrArray->array == NULL)
         return MEM_ERR;
-    for(int i = 0; i < ptrArray->y; i++)
-        ptrArray->array[i] = buff[i];
+    for(int j = 0; j < ptrArray->y; j++)
+        for(int i = 0; i < ptrArray->maxX; i++)//
+            ptrArray->array[j * ptrArray->maxX + i] = buff[j * ptrArray->maxX + i];
     ptrArray->y = y;
     free(buff);
     return 0;
