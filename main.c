@@ -76,8 +76,8 @@ int arrayExtend(int y, struct dArray *ptrArray){
     ptrArray->array = malloc(y * ptrArray->maxX * sizeof(int));
     if(ptrArray->array == NULL)
         return MEM_ERR;
-    for(int j = 0; j < ptrArray->y; j++)
-        for(int i = 0; i < ptrArray->maxX; i++)//
+    for(int j = 0, i; j < ptrArray->y; j++)
+        for(i = 0; i < ptrArray->maxX; i++)//
             ptrArray->array[j * ptrArray->maxX + i] = buff[j * ptrArray->maxX + i];
     ptrArray->y = y;
     free(buff);
