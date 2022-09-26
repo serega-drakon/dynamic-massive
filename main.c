@@ -1,55 +1,30 @@
+#include "main.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-//пользовательские ф.
-struct dArray;
-int array_w(struct dArray *ptrArray, int x, int y, int value);
-int array_r(struct dArray *ptrArray, int x, int y);
-_Bool arrayMemErr(struct dArray *ptrArray);
-void* arrayInit(); //returns NULL if memory error occur
-void arrayFree(struct dArray *ptrArray);
-
-int main() {
-    int x = 10;
-    int y = 2;
-    struct dArray *array = arrayInit();
-    if(array == NULL || arrayMemErr(array) == 1) return 0;
-    int j = 0;
-    while(j < 100) {
-        for(int i = 0; i < 1; i++)
-            array_w(array, i, j, getchar());
-        for (int i = 0; i < 1; i++)
-            printf("%c", array_r(array, i, j));
-        j++;
-    }
-    arrayFree(array);
-    return 0;
-}
+int main(){ return 0; }
 
 /////////////////////////////////////библиотечные//////////////////////////////////////////
 #define READ 0
 #define WRITE 1
-#define STEP 5  //шаг на который будет расширяться массив
+#define STEP 10  //шаг на который будет расширяться массив
 #define MEM_ERR 1
-#define MAX_X 300
 
 struct dArray {
-    int *array;
-    int maxX;     //const value
-    int y;     //default = 0
-    _Bool memErr;//default = 0
+    int *array;  //если ошибка памяти считаем указатель равным NULL
+    int maxX;     //default = 0
 };
 
-int arrayExtend(int y, struct dArray *ptrArray);
+int arrayExtend(int x, struct dArray *ptrArray);
 
-int array_Main(int flag, int x, int y, int value, struct dArray *ptrArray) {
+int array_Main(int flag, int x, int value, struct dArray *ptrArray) {
     _Bool err = 0;
-    if(ptrArray->memErr)
+    if(ptrArray->array == NULL)
         return 0;
-    if(y >= ptrArray->y){
-        if(arrayExtend(y, ptrArray) == MEM_ERR){
+    if(x >= ptrArray->maxX){
+        if(arrayExtend(x, ptrArray) == MEM_ERR){
             printf("memory allocation error\n");
-            ptrArray->memErr = 1;
+            //*array == null
             return 0;
         }
         err = 1;
@@ -58,24 +33,24 @@ int array_Main(int flag, int x, int y, int value, struct dArray *ptrArray) {
     switch (flag) {
         case READ:
             if (err)
-                printf("Значение X = %d, Y = %d получено из неопределенной переменной\n", x, y);
-            return ptrArray->array[y * ptrArray->maxX + x];
+                printf("Значение X = %d получено из неопределенной переменной\n", x);
+            return ptrArray->array[x];
         case WRITE:
-            return (ptrArray->array[y * ptrArray->maxX + x] = value);
+            return (ptrArray->array[x] = value);
     }
 }
 
-int arrayExtend(int y, struct dArray *ptrArray){
+int arrayExtend(int x, struct dArray *ptrArray){
     int *buff = ptrArray->array;
     //переменная х теряет смысл, теперь это новое кол-во элементов массива
-    y = y + 1 + (STEP - (y + 1) % STEP);
-    ptrArray->array = malloc(y * ptrArray->maxX * sizeof(int));
-    if(ptrArray->array == NULL)
+    x = x + 1 + (STEP - (x + 1) % STEP);
+    ptrArray->array = malloc(x * sizeof(int));
+    if(ptrArray->array == NULL) {
         return MEM_ERR;
-    for(int j = 0, i; j < ptrArray->y; j++)
-        for(i = 0; i < ptrArray->maxX; i++)//
-            ptrArray->array[j * ptrArray->maxX + i] = buff[j * ptrArray->maxX + i];
-    ptrArray->y = y;
+    }
+    for(int i = 0; i < ptrArray->maxX; i++)
+        ptrArray->array[i] = buff[i];
+    ptrArray->maxX = x;
     free(buff);
     return 0;
 }
@@ -84,12 +59,10 @@ int arrayExtend(int y, struct dArray *ptrArray){
 void* arrayInit(){ //сразу выделяет память под массив
     struct dArray *ptrArray = malloc(sizeof(struct dArray));
     if(ptrArray != NULL) {
-        ptrArray->maxX = MAX_X;
-        ptrArray->y = 0;
-        ptrArray->memErr = 0;
-        if (arrayExtend(ptrArray->y, ptrArray) == MEM_ERR) {
+        ptrArray->maxX = 0;
+        if (arrayExtend(ptrArray->maxX, ptrArray) == MEM_ERR) {
             printf("arrayExtend: memory error\n");
-            ptrArray->memErr = 1;
+            //*array == null
         }
     }
     else
@@ -99,30 +72,30 @@ void* arrayInit(){ //сразу выделяет память под масси�
 
 void arrayFree(struct dArray *ptrArray) {
     if (ptrArray != NULL) {
-        if (ptrArray->memErr == 0)
+        if (ptrArray->array != NULL)
             free(ptrArray->array);
         free(ptrArray);
     }
 }
 
 _Bool arrayMemErr(struct dArray *ptrArray) {
-    return ptrArray->memErr;
+    return ptrArray->array == NULL ? 1 : 0;
 }
 
-int array_r(struct dArray *ptrArray, int x, int y){
-    if (x >= 0 && x < MAX_X && y >= 0)
-        return array_Main(READ, x, y, 0, ptrArray);
+int array_r(struct dArray *ptrArray, int x){
+    if (x >= 0)
+        return array_Main(READ, x, 0, ptrArray);
     else{
-        printf("array_r error: X = %d Y = %d\n", x, y);
+        printf("array_r error: X = %d\n", x);
         return 0;
     }
 }
 
-int array_w(struct dArray *ptrArray, int x, int y, int value){
-    if(x >= 0 && x < MAX_X && y >= 0)
-        return array_Main(WRITE, x, y, value, ptrArray);
+int array_w(struct dArray *ptrArray, int x, int value){
+    if(x >= 0)
+        return array_Main(WRITE, x, value, ptrArray);
     else{
-        printf("array_w error: X = %d Y = %d\n", x, y);
+        printf("array_w error: X = %d\n", x);
         return 0;
     }
 }
